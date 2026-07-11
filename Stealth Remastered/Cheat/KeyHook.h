@@ -6,7 +6,7 @@ public:
 	CKeyHook()
 	{
 		memset(bKeyTable, false, sizeof(bKeyTable));
-		oWndProc = (tWndProc)(pSAMP->g_dwSAMP_Addr + 0x5DB40);
+		oWndProc = (tWndProc)(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwWndProc);
 		oCPad_UpdateGameKey = (tCPad_UpdateGameKey)0x541C40;
 		DetourRestoreAfterWith();
 		DetourTransactionBegin();

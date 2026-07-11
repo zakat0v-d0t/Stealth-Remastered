@@ -1,24 +1,169 @@
-#pragma once
-
 #include "main.h"
 
 CSAMP* pSAMP;
 
+// ============================================================
+// SA-MP 0.3.7-R1 offset table
+// ============================================================
+const SAMPOffsets g_Offsets_R1 =
+{
+	// Core pointers
+	0x21A0F8,	// dwSampInfo
+	0x21A10C,	// dwMiscInfo
+	0x21A0E4,	// dwChatInfo
+	0x21A0E8,	// dwInputInfo
+	0x21A0EC,	// dwKillInfo
+	0x216378,	// dwColorOffset
+
+	// Functions
+	0x064010,	// dwAddToChatWnd
+	0x09BD30,	// dwToggleCursor
+	0x09BC10,	// dwCursorUnlockActorCam
+	0x065C60,	// dwSendCommand
+	0x0057F0,	// dwSay
+	0x0661B0,	// dwWeaponSpriteID
+	0x05DB40,	// dwWndProc
+
+	// Aimbot hooks
+	0x0B05A0,	// dwFireInstantHit
+	0x0A0BB0,	// dwAddBullet
+
+	// RakNet
+	0x030B30,	// dwRPC
+	0x0307F0,	// dwSend
+	0x03A560,	// dwRPCRestore
+	0x033DC0,	// dwSendRestore1
+	0x037490,	// dwSendRestore2
+
+	// Anti-cheat
+	0x099230,	// dwAntiCheat
+
+	// CBug
+	0x0168E0,	// dwCBugFreeze
+	0x016FA0,	// dwCBugAnim
+	0x015530,	// dwCBugWeapon
+	0x015F40,	// dwCBugText
+
+	// Visual offsets
+	0x068B0C,	// dwHealthBarColor
+	0x068B33,	// dwHealthBarBG
+	0x068DD5,	// dwArmorBarColor
+	0x068E00,	// dwArmorBarBG
+	0x09D9D0,	// dwFPSUnlock
+};
+
+// ============================================================
+// SA-MP 0.3.7-R5-1 offset table
+// Verified offsets marked with [V], estimated with [E]
+// ============================================================
+const SAMPOffsets g_Offsets_R5 =
+{
+	// Core pointers [V] - verified via blast.hk / ugbase
+	0x26EB94,	// dwSampInfo       [V]
+	0x26EBAC,	// dwMiscInfo       [V]
+	0x26EB80,	// dwChatInfo       [V]
+	0x26EB84,	// dwInputInfo      [V]
+	0x26EB88,	// dwKillInfo       [V]
+	0x26AE14,	// dwColorOffset    [E] data section delta +0x54A9C
+
+	// Functions
+	0x069900,	// dwAddToChatWnd   [V]
+	0x0A06F0,	// dwToggleCursor   [V]
+	0x0A05D0,	// dwCursorUnlockActorCam [E] 0x120 before ToggleCursor
+	0x06B5C0,	// dwSendCommand    [E] chat section delta
+	0x005860,	// dwSay            [E]
+	0x06BAA0,	// dwWeaponSpriteID [E] chat section delta
+	0x063430,	// dwWndProc        [E]
+
+	// Aimbot hooks
+	0x0B5090,	// dwFireInstantHit [E]
+	0x0A5610,	// dwAddBullet      [E]
+
+	// RakNet [V] RPC/Send verified, restore computed with same delta
+	0x034620,	// dwRPC            [V]
+	0x0342E0,	// dwSend           [V]
+	0x03E050,	// dwRPCRestore     [E] RakNet delta +0x3AF0
+	0x0378B0,	// dwSendRestore1   [E] RakNet delta +0x3AF0
+	0x03AF80,	// dwSendRestore2   [E] RakNet delta +0x3AF0
+
+	// Anti-cheat
+	0x09DBF0,	// dwAntiCheat      [E]
+
+	// CBug [E] - estimated delta ~0x3C00
+	0x01A4E0,	// dwCBugFreeze     [E]
+	0x01ABA0,	// dwCBugAnim       [E]
+	0x019130,	// dwCBugWeapon     [E]
+	0x019B40,	// dwCBugText       [E]
+
+	// Visual offsets [E] - chat section delta +0x58F0
+	0x06E3FC,	// dwHealthBarColor [E]
+	0x06E423,	// dwHealthBarBG    [E]
+	0x06E6C5,	// dwArmorBarColor  [E]
+	0x06E6F0,	// dwArmorBarBG     [E]
+	0x0A2390,	// dwFPSUnlock      [E]
+};
+
+// ============================================================
+// Version detection via PE image size
+// ============================================================
+eSAMPVersion CSAMP::detectVersion()
+{
+	MODULEINFO mi;
+	if (GetModuleInformation(GetCurrentProcess(), (HMODULE)g_dwSAMP_Addr, &mi, sizeof(mi)))
+	{
+		// R5-1 binary is significantly larger than R1
+		if (mi.SizeOfImage >= 0x400000)
+			return SAMP_VERSION_R5;
+	}
+	return SAMP_VERSION_R1;
+}
+
+// ============================================================
+// Save/restore original bytes (version-independent)
+// ============================================================
+void CSAMP::saveOrigBytes(DWORD addr, size_t size)
+{
+	if (m_savedBytes.find(addr) == m_savedBytes.end())
+	{
+		std::vector<BYTE> bytes(size);
+		memcpy(bytes.data(), (void*)addr, size);
+		m_savedBytes[addr] = bytes;
+	}
+}
+
+void CSAMP::restoreOrigBytes(DWORD addr)
+{
+	auto it = m_savedBytes.find(addr);
+	if (it != m_savedBytes.end())
+		Memory::memcpy_safe((void*)addr, (char*)it->second.data(), it->second.size());
+}
+
+void CSAMP::patchWithSave(DWORD addr, const char* bytes, size_t size)
+{
+	saveOrigBytes(addr, size);
+	pSecure->memcpy_safe((void*)addr, bytes, size);
+}
+
+// ============================================================
+// Initialization
+// ============================================================
 bool CSAMP::tryInit()
 {
-	g_SAMP = *(stSAMP**)(g_dwSAMP_Addr + SAMP_INFO_OFFSET);
+	const SAMPOffsets& off = *m_pOffsets;
+
+	g_SAMP = *(stSAMP**)(g_dwSAMP_Addr + off.dwSampInfo);
 	if (g_SAMP == nullptr)
 		return false;
 
-	g_Chat = *(stChatInfo**)(g_dwSAMP_Addr + SAMP_CHAT_INFO_OFFSET);
+	g_Chat = *(stChatInfo**)(g_dwSAMP_Addr + off.dwChatInfo);
 	if (g_Chat == nullptr)
 		return false;
 
-	g_Input = *(stInputInfo**)(g_dwSAMP_Addr + SAMP_CHAT_INPUT_INFO_OFFSET);
+	g_Input = *(stInputInfo**)(g_dwSAMP_Addr + off.dwInputInfo);
 	if (g_Input == nullptr)
 		return false;
 
-	g_DeathList = *(stKillInfo**)(g_dwSAMP_Addr + SAMP_KILL_INFO_OFFSET);
+	g_DeathList = *(stKillInfo**)(g_dwSAMP_Addr + off.dwKillInfo);
 	if (g_DeathList == nullptr)
 		return false;
 
@@ -31,7 +176,7 @@ bool CSAMP::tryInit()
 	pSecure->memcpy_safe((void*)0x584CFF, "\x90\x90\x90\x90\x90", 5);
 	pSecure->memcpy_safe((void*)0x584BDD, "\x90\x90\x90\x90\x90", 5);
 	pSecure->memcpy_safe((void*)0x584C2A, "\x90\x90\x90\x90\x90", 5);
-	pSecure->memcpy_safe((void*)(g_dwSAMP_Addr + 0x99230), "\xC3", 1);
+	patchWithSave(g_dwSAMP_Addr + off.dwAntiCheat, "\xC3", 1);
 
 	g_dwSAMPCAC_Addr = (DWORD)LoadLibraryA("!sampcac_client.asi");
 
@@ -50,7 +195,7 @@ void CSAMP::addMessageToChat(D3DCOLOR dwColor, const char* szMsg, ...)
 	vsnprintf(tmp, sizeof(tmp) - 1, szMsg, ap);
 	va_end(ap);
 
-	return ((void(__thiscall*) (const void*, int, char*, char*, DWORD, DWORD)) (g_dwSAMP_Addr + SAMP_FUNC_ADDTOCHATWND))((void*)g_Chat, 8, tmp, NULL, dwColor, 0x00);;
+	return ((void(__thiscall*) (const void*, int, char*, char*, DWORD, DWORD)) (g_dwSAMP_Addr + m_pOffsets->dwAddToChatWnd))((void*)g_Chat, 8, tmp, NULL, dwColor, 0x00);;
 }
 
 void CSAMP::addSayToChatWindow(char* szText, ...)
@@ -66,8 +211,8 @@ void CSAMP::addSayToChatWindow(char* szText, ...)
 	va_end(ap);
 
 	if (tmp[0] == '/')
-		((void(__thiscall*) (void*, char*))(g_dwSAMP_Addr + 0x65C60))(g_Input, tmp);
-	else ((void(__thiscall*) (void*, char*))(g_dwSAMP_Addr + 0x57F0))(g_Players->pLocalPlayer, tmp);
+		((void(__thiscall*) (void*, char*))(g_dwSAMP_Addr + m_pOffsets->dwSendCommand))(g_Input, tmp);
+	else ((void(__thiscall*) (void*, char*))(g_dwSAMP_Addr + m_pOffsets->dwSay))(g_Players->pLocalPlayer, tmp);
 }
 
 void CSAMP::toggleSAMPCursor(int iToggle)
@@ -75,10 +220,10 @@ void CSAMP::toggleSAMPCursor(int iToggle)
 	if (g_SAMP == NULL) return;
 	if (g_Input->iInputEnabled) return;
 
-	void* pMiscInfo = *(void**)(g_dwSAMP_Addr + SAMP_MISC_INFO);
-	((void(__thiscall*)(void*, int, bool))(g_dwSAMP_Addr + SAMP_FUNC_TOGGLECURSOR))(pMiscInfo, iToggle ? 3 : 0, !iToggle);
+	void* pMiscInfo = *(void**)(g_dwSAMP_Addr + m_pOffsets->dwMiscInfo);
+	((void(__thiscall*)(void*, int, bool))(g_dwSAMP_Addr + m_pOffsets->dwToggleCursor))(pMiscInfo, iToggle ? 3 : 0, !iToggle);
 	if (!iToggle)
-		((void(__thiscall*)(void*))(g_dwSAMP_Addr + SAMP_FUNC_CURSORUNLOCKACTORCAM))(pMiscInfo);
+		((void(__thiscall*)(void*))(g_dwSAMP_Addr + m_pOffsets->dwCursorUnlockActorCam))(pMiscInfo);
 }
 
 bool CSAMP::isPlayerStreamed(const uint16_t playerID)
@@ -100,9 +245,6 @@ bool CSAMP::isPlayerStreamed(const uint16_t playerID)
 const char* CSAMP::getPlayerName(int iPlayerID)
 {
 	if (g_Players == NULL || iPlayerID < 0 || iPlayerID > SAMP_MAX_PLAYERS)
-		return NULL;
-
-	if (iPlayerID < 0 || iPlayerID > SAMP_MAX_PLAYERS)
 		return NULL;
 
 	if (iPlayerID == g_Players->sLocalPlayerID)
@@ -139,7 +281,7 @@ D3DCOLOR CSAMP::getPlayerColor(int iPlayerID)
 		return 0xFF63C0E2;
 	}
 
-	dwColor = (D3DCOLOR*)((uint8_t*)g_dwSAMP_Addr + SAMP_COLOR_OFFSET);
+	dwColor = (D3DCOLOR*)((uint8_t*)g_dwSAMP_Addr + m_pOffsets->dwColorOffset);
 	return D3DCOLOR_RGBA(dwColor[iPlayerID] >> 8, dwColor[iPlayerID] >> 16, dwColor[iPlayerID] >> 24, 255);
 }
 
@@ -212,7 +354,7 @@ int CSAMP::getNearestVehicle()
 
 const char* CSAMP::getWeaponSpriteID(char szWeapon)
 {
-	return ((const char*(__thiscall*)(stKillInfo*, char))(g_dwSAMP_Addr + 0x661B0))(pSAMP->getDeathList(), szWeapon);
+	return ((const char*(__thiscall*)(stKillInfo*, char))(g_dwSAMP_Addr + m_pOffsets->dwWeaponSpriteID))(pSAMP->getDeathList(), szWeapon);
 }
 
 float fWeaponDamage[55] =

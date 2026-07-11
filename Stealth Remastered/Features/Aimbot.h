@@ -11,8 +11,8 @@ public:
 		vecTargetBone = { 0.f, 0.f, 0.f };
 		vecCrosshair = { 0.f, 0.f, 0.f };
 
-		oFireInstantHit = (tFireInstantHit)(pSAMP->g_dwSAMP_Addr + 0xB05A0);
-		oAddBullet = (tAddBullet)(pSAMP->g_dwSAMP_Addr + 0xA0BB0);
+		oFireInstantHit = (tFireInstantHit)(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwFireInstantHit);
+		oAddBullet = (tAddBullet)(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwAddBullet);
 		oTargetWeaponRangeMultiplier = (tTargetWeaponRangeMultiplier)0x73B380;
 		DetourRestoreAfterWith();
 		DetourTransactionBegin();

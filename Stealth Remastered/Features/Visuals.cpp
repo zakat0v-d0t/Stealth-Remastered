@@ -131,7 +131,7 @@ void CVisuals::ESP_NameTags(int iPlayerID, CPed* pPed)
 		fHealth *= 40.f / 100.0f;
 		fHealth -= (40.f / 2.f);
 
-		ImColor colorHealthBar = *(ImU32*)(pSAMP->g_dwSAMP_Addr + 0x68B0C), colorHealthBarBG = *(ImU32*)(pSAMP->g_dwSAMP_Addr + 0x68B33);
+		ImColor colorHealthBar = *(ImU32*)(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwHealthBarColor), colorHealthBarBG = *(ImU32*)(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwHealthBarBG);
 
 		pRender->DrawRectFilled({ vecHeadScreen.fX - 21.f, (fArmor > 0.0f) ? vecHeadScreen.fY + 25.f : vecHeadScreen.fY + 17.f, 0 }, { vecHeadScreen.fX + 21.f, (fArmor > 0.0f) ? vecHeadScreen.fY + 31.f : vecHeadScreen.fY + 23.f, 0 }, 0xFF000000);
 		pRender->DrawRectFilled({ vecHeadScreen.fX - 20.f, (fArmor > 0.0f) ? vecHeadScreen.fY + 26.f : vecHeadScreen.fY + 18.f, 0 }, { vecHeadScreen.fX + 20.f, (fArmor > 0.0f) ? vecHeadScreen.fY + 30.f : vecHeadScreen.fY + 22.f, 0 }, ImColor(colorHealthBarBG.Value.z, colorHealthBarBG.Value.y, colorHealthBarBG.Value.x, colorHealthBarBG.Value.w));
@@ -139,7 +139,7 @@ void CVisuals::ESP_NameTags(int iPlayerID, CPed* pPed)
 
 		if (fArmor > 0.0f)
 		{
-			ImColor colorArmorBar = *(ImU32*)(pSAMP->g_dwSAMP_Addr + 0x68DD5), colorArmorBarBG = *(ImU32*)(pSAMP->g_dwSAMP_Addr + 0x68E00);
+			ImColor colorArmorBar = *(ImU32*)(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwArmorBarColor), colorArmorBarBG = *(ImU32*)(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwArmorBarBG);
 
 			if (fArmor > 100.0f)
 				fArmor = 100.0f;
@@ -381,12 +381,12 @@ void CVisuals::FPSFuncs()
 	static bool bFPSUnlock = false;
 	if (g_Config.g_Visuals.bFPSFuncs && g_Config.g_Visuals.bFPSUnlock)
 	{
-		pSecure->memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x9D9D0), "\x90\x90\x90\x90\x90", 5);
+		pSAMP->patchWithSave(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwFPSUnlock, "\x90\x90\x90\x90\x90", 5);
 		bFPSUnlock = true;
 	}
 	else if (bFPSUnlock)
 	{
-		Memory::memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x9D9D0), "\xE8\x9B\xF7\xFF\xFF", 5);
+		pSAMP->restoreOrigBytes(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwFPSUnlock);
 		bFPSUnlock = false;
 	}
 

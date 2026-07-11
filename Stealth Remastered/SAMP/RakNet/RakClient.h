@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "main.h"
 
@@ -333,8 +333,8 @@ public:
 	CRakClient()
 	{
 		vTable = *(void***)pSAMP->getInfo()->pRakClientInterface;
-		oRPC = (tRPC)(pSAMP->g_dwSAMP_Addr + 0x30B30);
-		oSend = (tSend)(pSAMP->g_dwSAMP_Addr + 0x307F0);
+		oRPC = (tRPC)(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwRPC);
+		oSend = (tSend)(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwSend);
 		DetourRestoreAfterWith();
 		DetourTransactionBegin();
 		DetourUpdateThread(GetCurrentThread());

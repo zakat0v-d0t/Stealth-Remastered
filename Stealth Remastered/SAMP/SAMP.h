@@ -2,16 +2,64 @@
 
 #include "main.h"
 
-#define SAMP_INFO_OFFSET							0x21A0F8
-#define SAMP_MISC_INFO								0x21A10C
-#define SAMP_CHAT_INFO_OFFSET						0x21A0E4
-#define SAMP_CHAT_INPUT_INFO_OFFSET					0x21A0E8
-#define SAMP_KILL_INFO_OFFSET						0x21A0EC
+// SA-MP version enum
+enum eSAMPVersion
+{
+	SAMP_VERSION_UNKNOWN,
+	SAMP_VERSION_R1,
+	SAMP_VERSION_R5
+};
 
-#define SAMP_FUNC_ADDTOCHATWND						0x064010
-#define SAMP_FUNC_TOGGLECURSOR						0x9BD30
-#define SAMP_FUNC_CURSORUNLOCKACTORCAM				0x9BC10
-#define SAMP_COLOR_OFFSET							0x216378
+// Multi-version offset table
+struct SAMPOffsets
+{
+	// Core pointers
+	DWORD dwSampInfo;
+	DWORD dwMiscInfo;
+	DWORD dwChatInfo;
+	DWORD dwInputInfo;
+	DWORD dwKillInfo;
+	DWORD dwColorOffset;
+
+	// Functions
+	DWORD dwAddToChatWnd;
+	DWORD dwToggleCursor;
+	DWORD dwCursorUnlockActorCam;
+	DWORD dwSendCommand;
+	DWORD dwSay;
+	DWORD dwWeaponSpriteID;
+	DWORD dwWndProc;
+
+	// Aimbot hooks
+	DWORD dwFireInstantHit;
+	DWORD dwAddBullet;
+
+	// RakNet
+	DWORD dwRPC;
+	DWORD dwSend;
+	DWORD dwRPCRestore;
+	DWORD dwSendRestore1;
+	DWORD dwSendRestore2;
+
+	// Anti-cheat
+	DWORD dwAntiCheat;
+
+	// CBug
+	DWORD dwCBugFreeze;
+	DWORD dwCBugAnim;
+	DWORD dwCBugWeapon;
+	DWORD dwCBugText;
+
+	// Visual offsets
+	DWORD dwHealthBarColor;
+	DWORD dwHealthBarBG;
+	DWORD dwArmorBarColor;
+	DWORD dwArmorBarBG;
+	DWORD dwFPSUnlock;
+};
+
+extern const SAMPOffsets g_Offsets_R1;
+extern const SAMPOffsets g_Offsets_R5;
 
 enum
 {
@@ -860,11 +908,13 @@ public:
 	{
 		isInited = false;
 		g_dwSAMP_Addr = (DWORD)LoadLibraryA("samp.dll");
+		m_eVersion = detectVersion();
+		m_pOffsets = (m_eVersion == SAMP_VERSION_R5) ? &g_Offsets_R5 : &g_Offsets_R1;
 	};
 
 	~CSAMP()
 	{
-		Memory::memcpy_safe((void*)(g_dwSAMP_Addr + 0x99230), "\x8B", 1);
+		restoreOrigBytes(g_dwSAMP_Addr + m_pOffsets->dwAntiCheat);
 	};
 
 	bool tryInit();
@@ -891,11 +941,25 @@ public:
 	struct stInputInfo*		getInput(void) { return g_Input; };
 	struct stKillInfo*		getDeathList(void) { return g_DeathList; };
 
+	const SAMPOffsets& offsets() const { return *m_pOffsets; }
+	eSAMPVersion getVersion() const { return m_eVersion; }
+
+	// Save original bytes before patching (version-independent restore)
+	void saveOrigBytes(DWORD addr, size_t size);
+	void restoreOrigBytes(DWORD addr);
+	void patchWithSave(DWORD addr, const char* bytes, size_t size);
+
 	bool isInited;
 	DWORD g_dwSAMP_Addr;
 	DWORD g_dwSAMPCAC_Addr;
 
 private:
+	eSAMPVersion detectVersion();
+
+	eSAMPVersion m_eVersion;
+	const SAMPOffsets* m_pOffsets;
+	std::map<DWORD, std::vector<BYTE>> m_savedBytes;
+
 	struct stSAMP*			g_SAMP;
 	struct stPlayerPool*	g_Players;
 	struct stVehiclePool*	g_Vehicles;

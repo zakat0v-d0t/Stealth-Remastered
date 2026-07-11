@@ -1,17 +1,17 @@
-﻿#include "main.h"
+#include "main.h"
 
 CRakClient* pRakClient;
 
 bool CRakClient::RPC(int uniqueID, BitStream* bitStream, PacketPriority priority, PacketReliability reliability, char orderingChannel, bool shiftTimestamp)
 {
-	Memory::memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x3A560), "\x55\x8B\xEC\x6A\xFF", 5);
+	pSAMP->patchWithSave(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwRPCRestore, "\x55\x8B\xEC\x6A\xFF", 5);
 	return (tRPC(vTable[25]))(pSAMP->getInfo()->pRakClientInterface, &uniqueID, bitStream, priority, reliability, orderingChannel, shiftTimestamp);
 }
 
 bool CRakClient::Send(BitStream* bitStream, PacketPriority priority, PacketReliability reliability, char orderingChannel)
 {
-	Memory::memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x33DC0), "\x6A\xFF\x68\x6B\x0C\xD1\x03", 7);
-	Memory::memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x37490), "\x53\x55\x56\x8D\xA9\xE9\x07\x00\x00", 9);
+	pSAMP->patchWithSave(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwSendRestore1, "\x6A\xFF\x68\x6B\x0C\xD1\x03", 7);
+	pSAMP->patchWithSave(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwSendRestore2, "\x53\x55\x56\x8D\xA9\xE9\x07\x00\x00", 9);
 	return (tSend(vTable[6]))(pSAMP->getInfo()->pRakClientInterface, bitStream, priority, reliability, orderingChannel);
 }
 

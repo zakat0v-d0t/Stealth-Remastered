@@ -27,21 +27,21 @@ void Combat::AllowCBUG()
 	if (g_Config.g_Combat.bAllowCBug)
 	{
 		if (g_Config.g_Combat.bCBugFreeze)
-			pSecure->memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x0168E0), "\xC3\x90", 2);
+			pSAMP->patchWithSave(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwCBugFreeze, "\xC3\x90", 2);
 		if (g_Config.g_Combat.bCBugAnim)
-			pSecure->memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x016FA0), "\xC3\x90", 2);
+			pSAMP->patchWithSave(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwCBugAnim, "\xC3\x90", 2);
 		if (g_Config.g_Combat.bCBugWeapon)
-			pSecure->memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x015530), "\xC3\x90", 2);
+			pSAMP->patchWithSave(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwCBugWeapon, "\xC3\x90", 2);
 		if (g_Config.g_Combat.bCBugText)
-			pSecure->memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x015F40), "\xC3\x90", 2);
+			pSAMP->patchWithSave(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwCBugText, "\xC3\x90", 2);
 		bAllowCBug = true;
 	}
 	else if (bAllowCBug)
 	{
-		Memory::memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x0168E0), "\xE9\x49", 2);
-		Memory::memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x016FA0), "\x55\x8B", 2);
-		Memory::memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x015530), "\xE9\x18", 2);
-		Memory::memcpy_safe((void*)(pSAMP->g_dwSAMP_Addr + 0x015F40), "\xE9\x2C", 2);
+		pSAMP->restoreOrigBytes(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwCBugFreeze);
+		pSAMP->restoreOrigBytes(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwCBugAnim);
+		pSAMP->restoreOrigBytes(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwCBugWeapon);
+		pSAMP->restoreOrigBytes(pSAMP->g_dwSAMP_Addr + pSAMP->offsets().dwCBugText);
 		bAllowCBug = false;
 	}
 }
