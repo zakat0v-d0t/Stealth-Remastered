@@ -146,6 +146,7 @@ struct stConfig
 
 	struct stHotkeys
 	{
+		int iMenu{ VK_INSERT };
 		std::array<int, 5> iWeaponSwitch{ 0, 0, 0, 0, 0 };
 		int iAutoBikeSpam{ 0 };
 		int iMotorBikeSpam{ 0 };

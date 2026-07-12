@@ -7,6 +7,7 @@ enum eSAMPVersion
 {
 	SAMP_VERSION_UNKNOWN,
 	SAMP_VERSION_R1,
+	SAMP_VERSION_R3,
 	SAMP_VERSION_R5
 };
 
@@ -59,6 +60,7 @@ struct SAMPOffsets
 };
 
 extern const SAMPOffsets g_Offsets_R1;
+extern const SAMPOffsets g_Offsets_R3;
 extern const SAMPOffsets g_Offsets_R5;
 
 enum
@@ -909,7 +911,7 @@ public:
 		isInited = false;
 		g_dwSAMP_Addr = (DWORD)LoadLibraryA("samp.dll");
 		m_eVersion = detectVersion();
-		m_pOffsets = (m_eVersion == SAMP_VERSION_R5) ? &g_Offsets_R5 : &g_Offsets_R1;
+		m_pOffsets = (m_eVersion == SAMP_VERSION_R5) ? &g_Offsets_R5 : (m_eVersion == SAMP_VERSION_R3) ? &g_Offsets_R3 : &g_Offsets_R1;
 	};
 
 	~CSAMP()

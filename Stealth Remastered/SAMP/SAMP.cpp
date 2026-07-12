@@ -53,6 +53,56 @@ const SAMPOffsets g_Offsets_R1 =
 };
 
 // ============================================================
+// SA-MP 0.3.7-R3-1 offset table
+// ============================================================
+const SAMPOffsets g_Offsets_R3 =
+{
+	// Core pointers
+	0x26E8DC,	// dwSampInfo
+	0x26E8F4,	// dwMiscInfo
+	0x26E8C8,	// dwChatInfo
+	0x26E8CC,	// dwInputInfo
+	0x26E8D0,	// dwKillInfo
+	0x216378,	// dwColorOffset
+
+	// Functions
+	0x067460,	// dwAddToChatWnd
+	0x09FFE0,	// dwToggleCursor
+	0x09FEC0,	// dwCursorUnlockActorCam
+	0x069190,	// dwSendCommand
+	0x005820,	// dwSay
+	0x0696E0,	// dwWeaponSpriteID
+	0x060EE0,	// dwWndProc
+
+	// Aimbot hooks
+	0x0B4590,	// dwFireInstantHit
+	0x0A4B10,	// dwAddBullet
+
+	// RakNet
+	0x033B10,	// dwRPC
+	0x0337D0,	// dwSend
+	0x03D540,	// dwRPCRestore
+	0x036DA0,	// dwSendRestore1
+	0x03A470,	// dwSendRestore2
+
+	// Anti-cheat
+	0x09D0E0,	// dwAntiCheat
+
+	// CBug
+	0x0199D0,	// dwCBugFreeze
+	0x01A090,	// dwCBugAnim
+	0x018620,	// dwCBugWeapon
+	0x019030,	// dwCBugText
+
+	// Visual offsets
+	0x06D8EC,	// dwHealthBarColor
+	0x06D913,	// dwHealthBarBG
+	0x06DBB5,	// dwArmorBarColor
+	0x06DBE0,	// dwArmorBarBG
+	0x0A1880,	// dwFPSUnlock
+};
+
+// ============================================================
 // SA-MP 0.3.7-R5-1 offset table
 // Verified offsets marked with [V], estimated with [E]
 // ============================================================
@@ -112,6 +162,8 @@ eSAMPVersion CSAMP::detectVersion()
 	if (GetModuleInformation(GetCurrentProcess(), (HMODULE)g_dwSAMP_Addr, &mi, sizeof(mi)))
 	{
 		// R5-1 binary is significantly larger than R1
+		if (mi.SizeOfImage == 0x31C000)
+			return SAMP_VERSION_R3;
 		if (mi.SizeOfImage >= 0x400000)
 			return SAMP_VERSION_R5;
 	}

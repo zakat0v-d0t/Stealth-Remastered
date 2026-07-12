@@ -1,4 +1,4 @@
-﻿#include "main.h"
+#include "main.h"
 #include "ImGui/imgui_internal.h"
 
 CMenu* pMenu;
@@ -311,6 +311,14 @@ void CMenu::Render()
 		{
 			if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_NoTooltip))
 			{
+				if (ImGui::BeginTabItem("Hotkeys"))
+				{
+					ImGui::TextUnformatted("Menu Toggle"); ImGui::SameLine(100); ImGui::PushItemWidth(100);
+					ImGui::Hotkey("##MenuHotkey", &g_Config.g_Hotkeys.iMenu); ImGui::PopItemWidth();
+					ImGui::Dummy({ 0,20 });
+					if (ImGui::Button("Close", { 160.5f, 20.f })) ImGui::CloseCurrentPopup();
+					ImGui::EndTabItem();
+				}
 				if (ImGui::BeginTabItem("Unload"))
 				{
 					ImGui::Text("(!) Close any recording software before press Unload!");

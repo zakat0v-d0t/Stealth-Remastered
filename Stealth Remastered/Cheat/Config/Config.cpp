@@ -183,6 +183,7 @@ static void to_json(json& j, const stConfig::stStyle& o, const stConfig::stStyle
 
 static void to_json(json& j, const stConfig::stHotkeys& o, const stConfig::stHotkeys& dummy = {})
 {
+    WRITE("iMenu", iMenu);
     WRITE("iWeaponSwitch", iWeaponSwitch);
     WRITE("iAutoBikeSpam", iAutoBikeSpam);
     WRITE("iMotorBikeSpam", iMotorBikeSpam);
@@ -398,6 +399,7 @@ static void from_json(const json& j, stConfig::stStyle& r)
 
 static void from_json(const json& j, stConfig::stHotkeys& r)
 {
+    read(j, "iMenu", r.iMenu);
     read(j, "iWeaponSwitch", r.iWeaponSwitch);
     read(j, "iAutoBikeSpam", r.iAutoBikeSpam);
     read(j, "iMotorBikeSpam", r.iMotorBikeSpam);
